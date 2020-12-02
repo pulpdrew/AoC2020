@@ -2,7 +2,7 @@ object Utils {
   /**
    * Count the number of occurrences of each unique item in items
    */
-  def countItems[T](items: List[T]): Map[T, Int] = {
+  def countItems[T](items: Iterable[T]): Map[T, Int] = {
     items.foldLeft(collection.mutable.Map[T, Int]())(addToCount).toMap.withDefaultValue(0)
   }
 
