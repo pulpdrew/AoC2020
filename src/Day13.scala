@@ -1,3 +1,5 @@
+import scala.annotation.tailrec
+
 object Day13 {
 
   def main(args: Array[String]): Unit = {
@@ -10,66 +12,53 @@ object Day13 {
 
     // Part 2
 
-    // (id, time) pairs
-    val schedule = Utils.getInputLines
-      .tail
-      .head
+    // The desired arrival schedule as pairs (<bus id>, <time offset>)
+    val schedule = Utils.getInputLines(1)
       .split(',')
       .zipWithIndex
       .filter(_._1 != "x")
-      .map(p => (p._1.toLong, p._2.toLong))
+      .map { case (id, idx) => (id.toLong, idx.toLong) }
+      .toList
 
-    // Use Chinese Remainder Theorem to solve system of modulo congruences
+    // The corresponding system of congruences x = a (mod m)...
+    // represented as tuples (a, m)
+    val system = schedule.map {
+      case (id, time) => ((id - time) % id, id)
+    }
 
-    val N = schedule.map(_._1).product
-
-    val t = schedule.map {
-      case (id, time) =>
-
-        // Bus arriving at t + time yields congruence
-        // t = (id - time) (mod id)
-
-        val a = (id - time) % id
-        val y = N / id
-        val z = inverseMod(y, id)
-
-        y * z * a
-    }.sum % N
-
+    // Use the Chinese Remainder Theorem to solve for the time
+    val t = chineseRemainder(system)
     println(s"Part 2: t = $t")
   }
 
+  // Finds the first solution x to the given system of congruences,
+  // where each tuple (a, m) corresponds to x = a (mod m)
+  private def chineseRemainder(system: List[(Long, Long)]): Long = {
+    val N = system.map(_._2).product
+    system.map {
+      case (a, m) =>
+        val y = N / m
+        val z = inverseMod(y, m)
+        a * y * z
+    }.sum % N
+  }
+
+  // Returns the solution x to
+  // x = a (mod m)
   private def inverseMod(a: Long, m: Long): Long = {
-    val (x, _, _) = gcdExtended(a, m)
+    val (x, _, _) = gcd(a, m)
     (x + m) % m
   }
 
-  // Returns (x, y, g) where ax + by = gcd(a, b) and g = gcd(a, b)
-  private def gcdExtended(a: Long, b: Long): (Long, Long, Long) = {
-    var rOld = a
-    var r = b
-    var sOld = 1L
-    var s = 0L
-    var tOld = 0L
-    var t = 1L
-
-    while (r != 0) {
-      val quotient = rOld / r
-
-      val rTemp = rOld - quotient * r
-      rOld  = r
-      r = rTemp
-
-      val sTemp = sOld - quotient * s
-      sOld = s
-      s = sTemp
-
-      val tTemp = tOld - quotient * t
-      tOld = t
-      t = tTemp
+  // Extended Euclid Algorithm, finds (x, y, g) for
+  // ax + by = gcd(a, b) and g = gcd(a, b)
+  private def gcd(a: Long, b: Long): (Long, Long, Long) = {
+    if (a == 0) {
+      (0, 1, b)
+    } else {
+      val (x, y, g) = gcd(b % a, a)
+      (y - (b/a) * x, x, g)
     }
-
-    (sOld, tOld, rOld)
   }
 
   private def waitTime(id: Long, readyTime: Long): Long = {
