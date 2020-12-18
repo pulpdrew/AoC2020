@@ -4,7 +4,7 @@ object Day18 {
 
   def main(args: Array[String]): Unit = {
 
-    // Evaluate them with + and = having the same precedence
+    // Evaluate them with + and * having the same precedence
     val expressions1 = Utils.getInputLines.map(line => tokenize(line))
     val precedences1 = (token: String) => token match {
       case "+" => 1L
